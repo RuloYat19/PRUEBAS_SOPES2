@@ -1,0 +1,4 @@
+# Agregar a kernel/Makefile del árbol Linux 6.18.48 si esos archivos no están ya incluidos:
+obj-y += process_monitor.o
+obj-y += ipc_channel.o
+obj-y += log_watch.o

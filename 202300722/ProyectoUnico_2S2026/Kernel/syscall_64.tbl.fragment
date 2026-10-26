@@ -1,0 +1,7 @@
+# Fragmento de referencia x86-64; confirma que estos números estén libres en tu kernel.
+470 common get_process_info       sys_get_process_info
+471 common get_processes_state    sys_get_processes_state
+472 common ipc_channel_send       sys_ipc_channel_send
+473 common ipc_channel_receive    sys_ipc_channel_receive
+474 common start_log_watch        sys_start_log_watch
+475 common stop_log_watch         sys_stop_log_watch

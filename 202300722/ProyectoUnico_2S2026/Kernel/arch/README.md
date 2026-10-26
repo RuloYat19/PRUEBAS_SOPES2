@@ -1,0 +1,1 @@
+Aquí se documentan los cambios de registro de syscalls. En x86-64, la tabla a editar está en el árbol del kernel: `arch/x86/entry/syscalls/syscall_64.tbl`. Verifica números libres antes de añadir las entradas.

@@ -1,0 +1,9 @@
+{
+  "monitor_path": "/tmp/proyecto_monitoreado",
+  "logwatch_path": "/tmp/practica4.log",
+  "central_log": "/tmp/practica4_central.log",
+  "log_keyword": "ERROR",
+  "http_host": "127.0.0.1",
+  "http_port": 8080,
+  "sample_interval_seconds": 2
+}
