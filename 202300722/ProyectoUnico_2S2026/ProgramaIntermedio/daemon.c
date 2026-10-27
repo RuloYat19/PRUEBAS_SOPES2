@@ -117,19 +117,82 @@ static int sha256_file(const char *path,char out[65]) {
     if(ferror(f))ok=0; if(ok)ok=EVP_DigestFinal_ex(ctx,digest,&n)==1;
     EVP_MD_CTX_free(ctx); fclose(f); if(!ok)return -1; for(unsigned int i=0;i<n;i++)sprintf(out+i*2,"%02x",digest[i]);out[64]='\0';return 0;
 }
-static bool hash_is_malicious(const char *hash,const char **name,const char **description) {
-    struct json_object *v=NULL,*obj=NULL; if(!blacklist)return false;
-    if(json_object_object_get_ex(blacklist,hash,&v)) { if(name)*name=hash;if(description)*description=json_object_get_string(v);return true; }
-    /* También acepta formato {"signatures":[{"sha256":"...","name":"..."}]} */
-    if(json_object_object_get_ex(blacklist,"signatures",&obj)&&json_object_is_type(obj,json_type_array)) {
-        for(size_t i=0;i<json_object_array_length(obj);i++){struct json_object *it=json_object_array_get_idx(obj,i),*h=NULL,*nm=NULL,*ds=NULL;
-            if(json_object_object_get_ex(it,"sha256",&h)&&strcasecmp(json_object_get_string(h),hash)==0){if(json_object_object_get_ex(it,"name",&nm)&&name)*name=json_object_get_string(nm);if(json_object_object_get_ex(it,"description",&ds)&&description)*description=json_object_get_string(ds);return true;}}
-    } return false;
+
+static bool hash_is_malicious(
+    const char *hash,
+    const char **name,
+    const char **description,
+    const char **severity
+) {
+    if (!blacklist) return false;
+
+    struct json_object *entry = NULL;
+    struct json_object *field = NULL;
+
+    /* Formato del proyecto: nombre de amenaza -> datos */
+    json_object_object_foreach(blacklist, key, value) {
+        if (!json_object_is_type(value, json_type_object))
+            continue;
+
+        if (json_object_object_get_ex(value, "hash", &field) &&
+            json_object_is_type(field, json_type_string) &&
+            strcasecmp(json_object_get_string(field), hash) == 0) {
+
+            if (name) *name = key;
+
+            if (description) {
+                if (json_object_object_get_ex(value, "descripcion", &field))
+                    *description = json_object_get_string(field);
+            }
+
+            if (severity) {
+                if (json_object_object_get_ex(value, "severidad", &field))
+                    *severity = json_object_get_string(field);
+            }
+
+            return true;
+        }
+    }
+
+    /* Compatibilidad con el formato {"signatures": [...]} */
+    if (json_object_object_get_ex(blacklist, "signatures", &entry) &&
+        json_object_is_type(entry, json_type_array)) {
+
+        for (size_t i = 0; i < json_object_array_length(entry); i++) {
+            struct json_object *item =
+                json_object_array_get_idx(entry, i);
+            struct json_object *h = NULL, *nm = NULL;
+            struct json_object *ds = NULL, *sv = NULL;
+
+            if (json_object_object_get_ex(item, "sha256", &h) &&
+                json_object_is_type(h, json_type_string) &&
+                strcasecmp(json_object_get_string(h), hash) == 0) {
+
+                if (json_object_object_get_ex(item, "name", &nm) && name)
+                    *name = json_object_get_string(nm);
+
+                if (json_object_object_get_ex(item, "description", &ds) &&
+                    description)
+                    *description = json_object_get_string(ds);
+
+                if (json_object_object_get_ex(item, "severity", &sv) &&
+                    severity)
+                    *severity = json_object_get_string(sv);
+
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 static void analyze_file(const char *path) {
     struct stat st; char hash[65]; if(stat(path,&st)<0||!S_ISREG(st.st_mode)||sha256_file(path,hash)<0)return;
-    const char *threat="firma desconocida",*desc="Coincidencia en blacklist"; bool bad=hash_is_malicious(hash,&threat,&desc);
-    if(bad && chmod(path,0000)==0){char msg[512];snprintf(msg,sizeof msg,"Hash malicioso '%s' detectado en %s; archivo puesto en cuarentena",threat,path);add_alert("archivo","HIGH",msg);}
+    const char *threat="firma desconocida";
+    const char *desc="Coincidencia en blacklist";
+    const char *severity="HIGH";
+    bool bad=hash_is_malicious(hash,&threat,&desc,&severity);
+    if(bad && chmod(path,0000)==0){char msg[512];snprintf(msg,sizeof msg,"Hash malicioso '%s' detectado en %s; archivo puesto en cuarentena",threat,path);add_alert("archivo",severity,msg);}
     pthread_mutex_lock(&data_lock); size_t i; for(i=0;i<file_count;i++)if(strcmp(files[i].path,path)==0)break;
     if(i==MAX_FILES)i=MAX_FILES-1; if(i==file_count&&file_count<MAX_FILES)file_count++;
     snprintf(files[i].path,sizeof files[i].path,"%s",path);snprintf(files[i].hash,sizeof files[i].hash,"%s",hash);snprintf(files[i].status,sizeof files[i].status,"%s",bad?"infectado":"benigno");files[i].mtime=(long long)st.st_mtime;
@@ -154,10 +217,55 @@ static void *ipc_thread(void *unused) {
 }
 struct file_event { __u32 pid; __u32 action; char path[256]; };
 static int on_file_event(void *ctx, void *data, size_t size) {
-    (void)ctx; if(size < sizeof(struct file_event))return 0;
-    struct file_event *e=data; if(!file_scan_enabled)return 0;
-    log_msg("eBPF evento pid=%u action=%u path=%s",e->pid,e->action,e->path);
-    analyze_file(e->path); return 0;
+    (void)ctx;
+
+    if (size < sizeof(struct file_event))
+        return 0;
+
+    struct file_event *e = data;
+
+    if (!file_scan_enabled)
+        return 0;
+
+    char path[sizeof(e->path)];
+    snprintf(path, sizeof(path), "%s", e->path);
+
+    log_msg("eBPF evento pid=%u action=%u path=%s",
+            e->pid, e->action, path);
+
+    struct stat previous, current;
+    int stable = 0;
+
+    /*
+     * Esperar hasta 3 segundos a que el archivo exista
+     * y su tamaño y fecha de modificación se estabilicen.
+     */
+    for (int attempt = 0; attempt < 30; attempt++) {
+        if (stat(path, &current) == 0 &&
+            S_ISREG(current.st_mode)) {
+
+            if (stable &&
+                current.st_size == previous.st_size &&
+                current.st_mtime == previous.st_mtime &&
+                current.st_ctim.tv_sec == previous.st_ctim.tv_sec &&
+                current.st_ctim.tv_nsec == previous.st_ctim.tv_nsec) {
+                analyze_file(path);
+                return 0;
+            }
+
+            previous = current;
+            stable = 1;
+        } else {
+            stable = 0;
+        }
+
+        usleep(100000);
+    }
+
+    log_msg("No se pudo analizar %s: archivo inexistente o inestable",
+            path);
+
+    return 0;
 }
 static void *file_thread(void *unused) {
     (void)unused;
@@ -237,7 +345,19 @@ int main(int argc,char **argv) {
     /* Leer rutas relativas antes de chdir("/") durante la daemonización. */
     load_config();load_blacklist();
     if(!foreground&&daemonize_process()<0)return EXIT_FAILURE;
-    signal(SIGTERM,on_signal);signal(SIGINT,on_signal);signal(SIGHUP,on_signal);
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+
+    sa.sa_handler = on_signal;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
+    if (sigaction(SIGTERM, &sa, NULL) == -1 ||
+        sigaction(SIGINT,  &sa, NULL) == -1 ||
+        sigaction(SIGHUP,  &sa, NULL) == -1) {
+        perror("sigaction");
+        return EXIT_FAILURE;
+    }
     int pidfd=write_pidfile();if(pidfd<0){log_msg("Ya existe una instancia o no se pudo crear pidfile");return EXIT_FAILURE;}
     mkdir(monitor_path,0750);log_msg("Daemon iniciado PID=%ld",(long)getpid());add_alert("sistema","LOW","Monitoreo del sistema activado");
     long lw=syscall(SYS_START_LOG_WATCH,logwatch_path,central_log,log_keyword);if(lw>=0){logwatch_id=(int)lw;log_msg("log_watch iniciado ID=%d",logwatch_id);}else{log_msg("No se pudo iniciar log_watch: %s",strerror(errno));}
