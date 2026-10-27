@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Dashboard - Práctica 4 SO2</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <header class="header">
+
+        <div>
+            <h1>Dashboard Práctica 4</h1>
+
+            <p>
+                Sistemas Operativos 2
+                · Kernel 6.18.48
+            </p>
+        </div>
+
+        <div class="status">
+            <span
+                id="statusDot"
+                class="status-dot"
+            ></span>
+
+            <span id="statusText">
+                Conectando...
+            </span>
+        </div>
+
+    </header>
+
+
+    <main class="container">
+
+        <!-- MEMORIA -->
+
+        <section>
+
+            <div class="section-title">
+                <h2>Memoria del sistema</h2>
+
+                <span id="memoryUpdated">
+                    Actualizando...
+                </span>
+            </div>
+
+
+            <div class="cards">
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Memoria total
+                    </span>
+
+                    <strong id="memoryTotal">
+                        0 MB
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Memoria usada
+                    </span>
+
+                    <strong id="memoryUsed">
+                        0 MB
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Memoria libre
+                    </span>
+
+                    <strong id="memoryFree">
+                        0 MB
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Cache
+                    </span>
+
+                    <strong id="memoryCache">
+                        0 MB
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Swap usada
+                    </span>
+
+                    <strong id="swapUsed">
+                        0 MB
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Swap total
+                    </span>
+
+                    <strong id="swapTotal">
+                        0 MB
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="memory-bar-container">
+
+                <div class="memory-bar">
+
+                    <div
+                        id="memoryBar"
+                        class="memory-bar-used"
+                    ></div>
+
+                </div>
+
+                <div class="memory-bar-labels">
+
+                    <span>
+                        Uso de memoria
+                    </span>
+
+                    <span id="memoryPercentage">
+                        0%
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ESTADO DE PROCESOS -->
+
+        <section>
+
+            <div class="section-title">
+                <h2>Estado de procesos</h2>
+            </div>
+
+
+            <div class="cards process-cards">
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Total
+                    </span>
+
+                    <strong id="processTotal">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Running
+                    </span>
+
+                    <strong id="processRunning">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Sleeping
+                    </span>
+
+                    <strong id="processSleeping">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="card">
+
+                    <span class="card-label">
+                        Zombie
+                    </span>
+
+                    <strong id="processZombie">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- PROCESOS -->
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>Procesos</h2>
+
+                <input
+                    type="text"
+                    id="pidSearch"
+                    placeholder="Buscar por PID o nombre..."
+                >
+
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>PID</th>
+
+                            <th>Nombre</th>
+
+                            <th>Runtime</th>
+
+                            <th>Memoria</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="processTable">
+
+                        <tr>
+
+                            <td colspan="4">
+                                Cargando procesos...
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- EVENTOS DE SEGURIDAD -->
+
+        <section>
+
+            <div class="section-title">
+
+                <h2>
+                    Eventos de seguridad
+                </h2>
+
+                <span
+                    id="eventCount"
+                    class="event-count"
+                >
+                    0 eventos
+                </span>
+
+            </div>
+
+
+            <div
+                id="securityEvents"
+                class="events"
+            >
+
+                <div class="empty-event">
+                    No hay eventos de seguridad.
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <p>
+            Práctica 4 · Sistemas Operativos 2 · USAC
+        </p>
+
+        <p>
+            Kernel 6.18.48
+        </p>
+
+    </footer>
+
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
