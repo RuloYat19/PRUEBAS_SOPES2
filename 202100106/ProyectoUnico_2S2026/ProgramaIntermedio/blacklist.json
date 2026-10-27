@@ -1,0 +1,27 @@
+{
+  "nombre": "Base local de firmas SO2",
+  "version": 1,
+  "actualizado": "2026-10-21",
+  "firmas": [
+    {
+      "sha256": "8b5904e17bb98626a449e99313d77d5f49335f73a783c8b0800c3f1a8d9d3660",
+      "nombre": "SO2.Demo.Troyano",
+      "descripcion": "Muestra de demostración que simula un troyano: texto plano inofensivo."
+    },
+    {
+      "sha256": "501e1e69c486c462ff11499f2086dcde083a3743ded7bdc178137b12ad39845f",
+      "nombre": "SO2.Demo.Ransomware",
+      "descripcion": "Muestra de demostración que simula un ransomware: texto plano inofensivo."
+    },
+    {
+      "sha256": "431caf694d5a52919d212d6f5c90091a8ce01a9b3d89cb927b81d65030788b4f",
+      "nombre": "SO2.Demo.Keylogger",
+      "descripcion": "Muestra de demostración que simula un keylogger: texto plano inofensivo."
+    },
+    {
+      "sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f",
+      "nombre": "EICAR-Test-File",
+      "descripcion": "Archivo de prueba estandar antivirus EICAR (68 bytes)."
+    }
+  ]
+}

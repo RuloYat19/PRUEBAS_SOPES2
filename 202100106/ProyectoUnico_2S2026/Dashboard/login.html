@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Iniciar sesión — Monitor SO2</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="pantalla-login">
+	<div class="login-contenedor">
+		<div class="tarjeta-login">
+			<header class="login-cabecera">
+				<h1>Monitor SO2</h1>
+				<p class="subtitulo">Autenticación de usuario</p>
+			</header>
+			<form id="login-formulario" class="login-formulario">
+				<div class="campo">
+					<label for="login-usuario">Usuario</label>
+					<input id="login-usuario" type="text" placeholder="Usuario" required autocomplete="username">
+				</div>
+				<div class="campo">
+					<label for="login-password">Contraseña</label>
+					<input id="login-password" type="password" placeholder="Contraseña" required autocomplete="current-password">
+				</div>
+				<p id="login-error" class="login-error" aria-live="polite"></p>
+				<button type="submit" class="boton-primario">Iniciar sesión</button>
+			</form>
+		</div>
+	</div>
+	<script src="js/api.js"></script>
+	<script src="js/auth.js"></script>
+</body>
+</html>

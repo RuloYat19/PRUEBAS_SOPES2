@@ -1,0 +1,18 @@
+=== EVIDENCIA FASE 2: DESCARGA Y VERSIÓN DEL KERNEL ===
+Fecha: 2026-08-17
+Estudiante Carné: 202100106
+
+1. Archivo descargado:
+linux-7.1.8.tar.xz (158,434,924 bytes / ~151 MB)
+Origen: https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.1.8.tar.xz
+
+2. Makefile (head -n 5 Makefile):
+# SPDX-License-Identifier: GPL-2.0
+VERSION = 7
+PATCHLEVEL = 1
+SUBLEVEL = 8
+EXTRAVERSION =
+NAME =
+
+3. Estructura del árbol:
+Contiene kernel/, arch/, include/, drivers/, fs/, Makefile, Kconfig.

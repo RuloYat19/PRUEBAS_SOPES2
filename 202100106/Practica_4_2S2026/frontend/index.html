@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Monitor SO2 — Práctica 4</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<header class="cabecera">
+		<div>
+			<h1>Monitoreo y Seguridad en Tiempo Real</h1>
+			<p class="subtitulo">Práctica 4 · Sistemas Operativos 2 · Carné 202100106</p>
+		</div>
+		<div class="indicadores">
+			<span class="indicador" id="ind-metricas"><i></i><span>Métricas: conectando…</span></span>
+			<span class="indicador" id="ind-eventos"><i></i><span>Eventos: conectando…</span></span>
+		</div>
+	</header>
+
+	<main class="rejilla">
+		<section class="tarjetas" aria-label="Resumen de procesos según sys_get_processes_state">
+			<div class="tarjeta"><span class="etiqueta">Procesos totales</span><strong id="res-total">—</strong></div>
+			<div class="tarjeta"><span class="etiqueta"><i class="punto bueno"></i>En ejecución</span><strong id="res-running">—</strong></div>
+			<div class="tarjeta"><span class="etiqueta"><i class="punto neutro"></i>Dormidos</span><strong id="res-sleeping">—</strong></div>
+			<div class="tarjeta"><span class="etiqueta"><i class="punto critico"></i>Zombie</span><strong id="res-zombie">—</strong></div>
+		</section>
+
+		<section class="panel" id="panel-desglose">
+			<h2>Desglose de memoria</h2>
+			<p class="fuente">/proc/meminfo · memoria física total <span id="mem-total">—</span></p>
+			<div class="dona-contenedor">
+				<div id="grafico-dona" class="dona"></div>
+				<ul id="leyenda-dona" class="leyenda vertical"></ul>
+			</div>
+		</section>
+
+		<section class="panel" id="panel-evolucion">
+			<h2>Evolución de memoria</h2>
+			<p class="fuente">/proc/meminfo · memoria física usada y swap usada, en GB</p>
+			<ul id="leyenda-lineas" class="leyenda"></ul>
+			<div id="grafico-lineas" class="lineas"></div>
+		</section>
+
+		<section class="panel" id="panel-eventos">
+			<div class="panel-cabecera">
+				<h2>Eventos de seguridad</h2>
+				<span class="contador" id="eventos-contador">0 eventos</span>
+			</div>
+			<p class="fuente">log_watch → canal IPC → SSE · sin sondeo: cada fila llega cuando el kernel la notifica</p>
+			<div class="tabla-desplazable eventos">
+				<table>
+					<thead>
+						<tr><th>Detectado</th><th>Palabra</th><th>Archivo</th><th>Contenido</th></tr>
+					</thead>
+					<tbody id="eventos-cuerpo"></tbody>
+				</table>
+				<p class="vacio" id="eventos-vacio">Sin eventos. Escribe una línea con la palabra vigilada en un log para ver la alerta.</p>
+			</div>
+		</section>
+
+		<section class="panel" id="panel-pid">
+			<h2>Consulta por PID</h2>
+			<p class="fuente">sys_get_process_info · bajo demanda</p>
+			<form id="pid-formulario" class="pid-formulario">
+				<label for="pid-entrada">PID</label>
+				<input id="pid-entrada" type="number" min="1" step="1" placeholder="1" required>
+				<button type="submit">Consultar</button>
+			</form>
+			<div id="pid-resultado" class="pid-resultado" aria-live="polite">
+				<p class="vacio visible">Ingresa un PID o haz clic en una fila de la tabla de procesos.</p>
+			</div>
+		</section>
+
+		<section class="panel" id="panel-procesos">
+			<div class="panel-cabecera">
+				<h2>Procesos activos</h2>
+				<span class="contador" id="procesos-contador">—</span>
+			</div>
+			<p class="fuente">Escaneo de /proc · actualización cada 2 s</p>
+			<div class="filtros">
+				<input id="filtro-texto" type="search" placeholder="Filtrar por nombre o PID" aria-label="Filtrar por nombre o PID">
+				<select id="filtro-estado" aria-label="Filtrar por estado">
+					<option value="">Todos los estados</option>
+				</select>
+			</div>
+			<div class="tabla-desplazable procesos">
+				<table>
+					<thead>
+						<tr>
+							<th><button type="button" data-columna="pid">PID</button></th>
+							<th><button type="button" data-columna="nombre">Nombre</button></th>
+							<th><button type="button" data-columna="estado">Estado</button></th>
+						</tr>
+					</thead>
+					<tbody id="procesos-cuerpo"></tbody>
+				</table>
+			</div>
+		</section>
+	</main>
+
+	<div id="tooltip" class="tooltip" hidden></div>
+
+	<script src="js/charts.js"></script>
+	<script src="js/app.js"></script>
+</body>
+</html>

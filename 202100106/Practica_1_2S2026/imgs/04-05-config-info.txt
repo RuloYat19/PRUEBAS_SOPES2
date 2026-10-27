@@ -1,0 +1,17 @@
+=== EVIDENCIA FASE 3: CONFIGURACIÓN DEL KERNEL (.config) ===
+Fecha: 2026-08-17
+Estudiante Carné: 202100106
+
+1. Configuración Base:
+Copia de /boot/config-7.0.0-29-generic adaptada con olddefconfig y localmodconfig.
+
+2. Neutralización de Trampas de Ubuntu:
+CONFIG_SYSTEM_TRUSTED_KEYS=""
+CONFIG_SYSTEM_REVOCATION_KEYS=""
+CONFIG_DEBUG_INFO_NONE=y (Desactivadas DEBUG_INFO_DWARF5 y DEBUG_INFO_BTF)
+CONFIG_RUST deshabilitado
+
+3. Identificador de Compilación:
+CONFIG_LOCALVERSION="-so2-202100106"
+# CONFIG_LOCALVERSION_AUTO is not set
+Resultado esperado en uname -r tras instalación: 7.1.8-so2-202100106

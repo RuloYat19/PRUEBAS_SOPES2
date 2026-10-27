@@ -1,0 +1,6 @@
+# Binarios compilados y archivos objeto
+prueba
+*.o
+*.ko
+*.out
+so2_build_workspace/

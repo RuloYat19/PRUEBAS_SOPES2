@@ -1,0 +1,23 @@
+=== EVIDENCIA FASE 1: SISTEMA OPERATIVO BASE ===
+Fecha: 2026-08-17
+Estudiante Carné: 202100106
+
+1. Distribución (lsb_release -a):
+Distributor ID: Ubuntu
+Description:    Ubuntu 26.04 LTS
+Release:        26.04
+Codename:       resolute
+
+2. Kernel Original (uname -r):
+7.0.0-29-generic
+
+3. Arquitectura (uname -m / uname -a):
+x86_64
+Linux sandbox 7.0.0-29-generic #29-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 17 20:52:35 UTC 2026 x86_64 GNU/Linux
+
+4. Espacio en disco disponible:
+78 GB disponibles en partición raíz (/dev/sda2)
+
+5. Driver gráfico detectado:
+Módulos NVIDIA activos (nvidia, nvidia_modeset, nvidia_drm, nvidia_uvm).
+NOTA CRÍTICA: Se requiere ejecutar `sudo dkms autoinstall -k 7.1.8-so2-202100106` en la Fase 6 antes de `make install`.

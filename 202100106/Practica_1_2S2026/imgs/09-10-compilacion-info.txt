@@ -1,0 +1,19 @@
+=== EVIDENCIA FASE 5: COMPILACIÓN DEL KERNEL ===
+Fecha: 2026-08-17
+Estudiante Carné: 202100106
+
+1. Comando ejecutado:
+time make -j12 2>&1 | tee compilacion.log
+
+2. Resultado del binario final:
+Kernel: arch/x86/boot/bzImage is ready (#2)
+Ruta: arch/x86/boot/bzImage
+Tamaño: 17 MB
+
+3. Tiempo de compilación:
+real 10m56.004s
+user 75m25.316s
+sys  14m47.667s
+
+4. Estado:
+Compilación 100% exitosa sin errores ni advertencias en el código de getpid ni getpid_counter.

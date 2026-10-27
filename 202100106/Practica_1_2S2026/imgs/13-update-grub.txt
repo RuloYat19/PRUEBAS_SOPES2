@@ -1,0 +1,19 @@
+Sourcing file `/etc/default/grub'
+Sourcing file `/etc/default/grub.d/kdump-tools.cfg'
+Generating grub configuration file ...
+Found linux image: /boot/vmlinuz-7.1.8-so2-202100106
+Found initrd image: /boot/initrd.img-7.1.8-so2-202100106
+Found linux image: /boot/vmlinuz-7.1.8-so2-202100106.old
+Found initrd image: /boot/initrd.img-7.1.8-so2-202100106
+Found linux image: /boot/vmlinuz-7.0.0-29-generic
+Found initrd image: /boot/initrd.img-7.0.0-29-generic
+Found memtest86+ 64bit EFI image: /boot/mt86+x64
+Found memtest86+ 32bit EFI image: /boot/mt86+ia32
+Found memtest86+ 64bit image: /boot/mt86+x64
+Found memtest86+ 32bit image: /boot/mt86+ia32
+Warning: os-prober will be executed to detect other bootable partitions.
+Its output will be used to detect bootable binaries on them and create new boot entries.
+Found Windows Boot Manager on /dev/nvme0n1p1@/efi/Microsoft/Boot/bootmgfw.efi
+Adding boot menu entry for UEFI Firmware Settings ...
+done
+--- entradas del menu ---

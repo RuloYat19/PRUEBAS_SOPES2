@@ -1,0 +1,17 @@
+=== EVIDENCIA FASE 6: INSTALACIÓN DEL KERNEL Y GRUB ===
+Fecha: 2026-08-17
+Estudiante Carné: 202100106
+
+1. Módulos instalados en:
+/lib/modules/7.1.8-so2-202100106/
+
+2. Archivos en /boot:
+- /boot/vmlinuz-7.1.8-so2-202100106
+- /boot/initrd.img-7.1.8-so2-202100106
+- /boot/System.map-7.1.8-so2-202100106
+- /boot/config-7.1.8-so2-202100106
+
+3. Entradas de GRUB registradas:
+- Ubuntu, with Linux 7.1.8-so2-202100106 (Kernel Modificado Predeterminado)
+- Ubuntu, with Linux 7.0.0-29-generic (Kernel Original de Respaldo)
+- Windows Boot Manager (Detectado en /dev/nvme0n1p1)

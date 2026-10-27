@@ -1,0 +1,8 @@
+[  722.575638] getpid_counter: getpid() ha sido invocada 6803 veces
+[  722.575665] getpid_counter: getpid() ha sido invocada 6808 veces
+[  739.343136] getpid_counter: getpid() ha sido invocada 6810 veces
+[  739.343168] getpid_counter: getpid() ha sido invocada 6815 veces
+[  739.343858] getpid_counter: getpid() ha sido invocada 6816 veces
+[  739.343877] getpid_counter: getpid() ha sido invocada 6821 veces
+[  739.344675] getpid_counter: getpid() ha sido invocada 6822 veces
+[  739.344698] getpid_counter: getpid() ha sido invocada 6827 veces

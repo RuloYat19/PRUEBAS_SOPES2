@@ -1,0 +1,21 @@
+==============================================================
+       PRACTICA 1 - SISTEMAS OPERATIVOS 2 (2S2026)            
+       Validacion de Syscalls: getpid() y getpid_counter()    
+       Estudiante Carne: 202100106                            
+==============================================================
+
+[1] Contador global en kernel ANTES del ciclo: 6803
+
+[2] Ejecutando 5 llamadas explicitas a syscall(SYS_getpid):
+    -> Invocacion #1: PID obtenido = 4976
+    -> Invocacion #2: PID obtenido = 4976
+    -> Invocacion #3: PID obtenido = 4976
+    -> Invocacion #4: PID obtenido = 4976
+    -> Invocacion #5: PID obtenido = 4976
+
+[3] Contador global en kernel DESPUES del ciclo: 6808
+    -> Incremento total observado en el kernel: +5
+
+[4] Mensaje registrado en el buffer circular del kernel (dmesg).
+    Para verificarlo en vivo, ejecute: sudo dmesg | grep getpid_counter
+==============================================================

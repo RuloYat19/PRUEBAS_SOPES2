@@ -1,0 +1,7 @@
+# ==============================================================================
+# 64-bit C ABI system call table for x86_64
+# Practica 2 - Sistemas Operativos 2 (2S2026) - Carne: 202100106
+# ==============================================================================
+# <number> <abi> <name> <entry point>
+548	common	get_process_info	sys_get_process_info
+549	common	get_processes_state	sys_get_processes_state

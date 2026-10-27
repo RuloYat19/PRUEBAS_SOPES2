@@ -1,0 +1,5 @@
+Linux kwlopez-MS-7C95 7.1.8-so2-202100106 #3 SMP PREEMPT_DYNAMIC Mon Aug 17 22:26:37 CST 2026 x86_64 GNU/Linux
+
+Linux version 7.1.8-so2-202100106 (kwlopez@sandbox) (gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, GNU ld (GNU Binutils for Ubuntu) 2.46) #3 SMP PREEMPT_DYNAMIC Mon Aug 17 22:26:37 CST 2026
+
+SecureBoot enabled

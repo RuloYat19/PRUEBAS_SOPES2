@@ -1,0 +1,17 @@
+=== EVIDENCIA FASE 4: MODIFICACIÓN DEL CÓDIGO FUENTE ===
+Fecha: 2026-08-17
+Estudiante Carné: 202100106
+
+1. Localización de getpid en kernel/sys.c:
+Línea 999: SYSCALL_DEFINE0(getpid)
+
+2. Número asignado en arch/x86/entry/syscalls/syscall_64.tbl:
+Línea 399: 472  common  getpid_counter          sys_getpid_counter
+
+3. Declaración de prototipo en include/linux/syscalls.h:
+Línea 732: asmlinkage long sys_getpid_counter(void);
+
+4. Diffs generados:
+- diff-sys.c.patch
+- diff-syscalls.h.patch
+- diff-syscall_64.tbl.patch

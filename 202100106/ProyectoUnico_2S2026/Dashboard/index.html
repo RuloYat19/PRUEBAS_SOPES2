@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Monitor SO2 — Práctica 4</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<header class="cabecera">
+		<div>
+			<h1>Monitoreo y Seguridad en Tiempo Real</h1>
+			<p class="subtitulo">Práctica 4 · Sistemas Operativos 2 · Carné 202100106</p>
+		</div>
+		<div class="cabecera-derecha">
+			<div class="bloque-sesion">
+				<span class="sesion-info">
+					<strong id="sesion-usuario">—</strong>
+					<small id="sesion-rol">—</small>
+				</span>
+				<button type="button" id="boton-logout" class="boton-logout">Cerrar sesión</button>
+			</div>
+			<div class="indicadores">
+				<span class="indicador" id="ind-metricas"><i></i><span>Métricas: conectando…</span></span>
+				<span class="indicador" id="ind-eventos"><i></i><span>Eventos: conectando…</span></span>
+			</div>
+		</div>
+	</header>
+
+	<main class="rejilla">
+		<section class="tarjetas" aria-label="Resumen de procesos según sys_get_processes_state">
+			<div class="tarjeta"><span class="etiqueta">Procesos totales</span><strong id="res-total">—</strong></div>
+			<div class="tarjeta"><span class="etiqueta"><i class="punto bueno"></i>En ejecución</span><strong id="res-running">—</strong></div>
+			<div class="tarjeta"><span class="etiqueta"><i class="punto neutro"></i>Dormidos</span><strong id="res-sleeping">—</strong></div>
+			<div class="tarjeta"><span class="etiqueta"><i class="punto critico"></i>Zombie</span><strong id="res-zombie">—</strong></div>
+		</section>
+
+		<section class="panel panel-metricas-cabecera">
+			<div class="panel-cabecera">
+				<h2>Métricas del sistema</h2>
+				<div class="controles-metricas">
+					<span id="estado-metricas">Métricas activas</span>
+					<label data-rol="admin_user"><input type="checkbox" id="interruptor-metricas" checked> Métricas del sistema</label>
+				</div>
+			</div>
+		</section>
+
+		<section class="panel" id="panel-paginas">
+			<h2>Páginas activas vs. inactivas</h2>
+			<p class="fuente">/proc/meminfo · páginas activas e inactivas, en GB</p>
+			<ul id="leyenda-paginas" class="leyenda"></ul>
+			<div id="grafico-paginas" class="lineas"></div>
+			<p class="aviso-desactivado" hidden>Monitoreo de métricas desactivado</p>
+		</section>
+
+		<section class="panel" id="panel-evolucion">
+			<h2>Evolución de memoria</h2>
+			<p class="fuente">/proc/meminfo · memoria física usada y swap usada, en GB</p>
+			<ul id="leyenda-lineas" class="leyenda"></ul>
+			<div id="grafico-lineas" class="lineas"></div>
+			<p class="aviso-desactivado" hidden>Monitoreo de métricas desactivado</p>
+		</section>
+
+		<section class="panel" id="panel-desglose">
+			<h2>Desglose de memoria</h2>
+			<p class="fuente">/proc/meminfo · memoria física total <span id="mem-total">—</span></p>
+			<div class="dona-contenedor">
+				<div id="grafico-dona" class="dona"></div>
+				<ul id="leyenda-dona" class="leyenda vertical"></ul>
+			</div>
+			<p class="aviso-desactivado" hidden>Monitoreo de métricas desactivado</p>
+		</section>
+
+		<section class="panel" id="panel-fallos">
+			<h2>Fallos de página menores vs. mayores</h2>
+			<p class="fuente">/proc/vmstat · fallos menores y mayores por intervalo</p>
+			<div class="fallos-apilados">
+				<div class="fallo-bloque">
+					<ul id="leyenda-pgfault" class="leyenda"></ul>
+					<div id="grafico-pgfault" class="lineas"></div>
+				</div>
+				<div class="fallo-bloque">
+					<ul id="leyenda-pgmajfault" class="leyenda"></ul>
+					<div id="grafico-pgmajfault" class="lineas"></div>
+				</div>
+			</div>
+			<p class="aviso-desactivado" hidden>Monitoreo de métricas desactivado</p>
+		</section>
+
+		<section class="panel" id="panel-alertas">
+			<div class="panel-cabecera">
+				<h2>Alertas</h2>
+				<span class="contador" id="alertas-resumen">LOW 0 · MEDIUM 0 · HIGH 0</span>
+			</div>
+			<p class="fuente">Tiempo real vía SSE · hasta 200 alertas recientes</p>
+			<div class="tabla-desplazable alertas">
+				<table>
+					<thead>
+						<tr><th>Fecha y hora</th><th>Severidad</th><th>Tipo</th><th>Motivo</th><th>Descripción</th></tr>
+					</thead>
+					<tbody id="alertas-cuerpo"></tbody>
+				</table>
+				<p class="vacio" id="alertas-vacio">Sin alertas registradas.</p>
+			</div>
+		</section>
+
+		<section class="panel" id="panel-pid" data-rol="admin_user">
+			<h2>Consulta por PID</h2>
+			<p class="fuente">sys_get_process_info · bajo demanda</p>
+			<form id="pid-formulario" class="pid-formulario">
+				<label for="pid-entrada">PID</label>
+				<input id="pid-entrada" type="number" min="1" step="1" placeholder="1" required>
+				<button type="submit">Consultar</button>
+			</form>
+			<div id="pid-resultado" class="pid-resultado" aria-live="polite">
+				<p class="vacio visible">Ingresa un PID o haz clic en una fila de la tabla de procesos.</p>
+			</div>
+		</section>
+
+		<section class="panel" id="panel-procesos">
+			<div class="panel-cabecera">
+				<h2>Procesos (Top 20 por memoria)</h2>
+				<div class="controles-procesos">
+					<span id="estado-procesos">Procesos: activos</span>
+					<label data-rol="admin_user"><input type="checkbox" id="interruptor-procesos" checked> Escaneo de procesos</label>
+				</div>
+			</div>
+			<p class="fuente">Top 20 ordenado por memoria RSS · tiempo real vía SSE</p>
+			<div class="filtros">
+				<input id="filtro-texto" type="search" placeholder="Filtrar por nombre o PID" aria-label="Filtrar por nombre o PID">
+			</div>
+			<p id="procesos-aviso" class="procesos-aviso" aria-live="polite"></p>
+			<div class="tabla-desplazable procesos">
+				<table>
+					<thead>
+						<tr>
+							<th>PID</th>
+							<th>Nombre</th>
+							<th>Estado</th>
+							<th>Memoria</th>
+							<th>% memoria</th>
+							<th data-rol="admin_user">Acción</th>
+						</tr>
+					</thead>
+					<tbody id="procesos-cuerpo"></tbody>
+				</table>
+			</div>
+			<p class="aviso-desactivado" hidden>Escaneo de procesos desactivado</p>
+		</section>
+
+		<section class="panel" id="panel-archivos">
+			<div class="panel-cabecera">
+				<h2>Archivos analizados</h2>
+				<div class="controles-archivos">
+					<span id="estado-archivos">Archivos: desactivado</span>
+					<label data-rol="admin_user"><input type="checkbox" id="interruptor-archivos"> Escaneo de archivos</label>
+				</div>
+			</div>
+			<div class="info-ruta">
+				<span class="etiqueta-ruta">Ruta vigilada:</span>
+				<span id="ruta-actual"></span>
+			</div>
+			<p id="sensor-error" class="error visible" hidden></p>
+			<form id="form-ruta" class="form-ruta" data-rol="admin_user">
+				<label for="ruta-vigilada">Ruta</label>
+				<input id="ruta-vigilada" type="text" placeholder="/ruta/absoluta" required>
+				<button type="submit">Cambiar ruta</button>
+			</form>
+			<p id="archivos-aviso" class="archivos-aviso" aria-live="polite"></p>
+			<div class="tabla-desplazable archivos">
+				<table>
+					<thead>
+						<tr>
+							<th>Archivo</th>
+							<th>Estado</th>
+							<th>Última modificación</th>
+							<th>SHA-256</th>
+							<th>Último evento</th>
+							<th data-rol="admin_user">Acción</th>
+						</tr>
+					</thead>
+					<tbody id="archivos-cuerpo"></tbody>
+				</table>
+			</div>
+			<p class="aviso-desactivado" hidden>Escaneo de archivos desactivado</p>
+		</section>
+
+		<section class="panel" id="panel-amenazas">
+			<div class="panel-cabecera">
+				<h2>Amenazas detectadas</h2>
+			</div>
+			<div class="tabla-desplazable amenazas">
+				<table>
+					<thead>
+						<tr>
+							<th>Firma</th>
+							<th>Archivo</th>
+							<th>Descripción</th>
+							<th>Fecha</th>
+							<th>Cuarentena</th>
+						</tr>
+					</thead>
+					<tbody id="amenazas-cuerpo"></tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="panel" id="panel-cuarentena" data-rol="admin_user">
+			<div class="panel-cabecera">
+				<h2>Cuarentena</h2>
+			</div>
+			<div class="tabla-desplazable cuarentena">
+				<table>
+					<thead>
+						<tr>
+							<th>Archivo</th>
+							<th>Tipo</th>
+							<th>Motivo</th>
+							<th>Usuario</th>
+							<th>Fecha</th>
+							<th>Permisos anteriores</th>
+						</tr>
+					</thead>
+					<tbody id="cuarentena-cuerpo"></tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="panel" id="base-firmas" data-rol="admin_user">
+			<div class="panel-cabecera">
+				<h2>Base de firmas</h2>
+			</div>
+			<div class="info-blacklist">
+				<p><strong>Nombre:</strong> <span id="blacklist-nombre">—</span></p>
+				<p><strong>Versión:</strong> <span id="blacklist-version">—</span></p>
+				<p><strong>Fecha:</strong> <span id="blacklist-fecha">—</span></p>
+				<p><strong>Firmas:</strong> <span id="blacklist-cantidad">—</span></p>
+				<p id="blacklist-error" class="error" hidden></p>
+			</div>
+			<form id="form-blacklist" class="form-blacklist">
+				<label for="archivo-blacklist">Archivo JSON de firmas</label>
+				<input id="archivo-blacklist" type="file" accept=".json,application/json" required>
+				<button type="submit" id="boton-actualizar-blacklist">Actualizar blacklist</button>
+			</form>
+			<p id="blacklist-aviso" class="blacklist-aviso" aria-live="polite"></p>
+		</section>
+
+		<section class="panel" id="panel-logwatch" data-rol="admin_user">
+			<div class="panel-cabecera">
+				<h2>Logwatch</h2>
+			</div>
+			<p id="logwatch-base-texto" class="info-base">Las rutas deben estar dentro de <span id="logwatch-base">—</span></p>
+			<form id="form-logwatch" class="form-logwatch">
+				<div class="campo-logwatch">
+					<label for="logwatch-palabra">Palabra clave</label>
+					<input id="logwatch-palabra" type="text" placeholder="ERROR" required>
+				</div>
+				<div class="campo-logwatch">
+					<label for="logwatch-central">Ruta central</label>
+					<input id="logwatch-central" type="text" placeholder="/ruta/central.txt" required>
+				</div>
+				<div class="campo-logwatch">
+					<label for="logwatch-rutas">Rutas a vigilar (una por línea, de 1 a 8)</label>
+					<textarea id="logwatch-rutas" rows="3" placeholder="/ruta/app.log" required></textarea>
+				</div>
+				<button type="submit" id="boton-crear-logwatch">Crear logwatch</button>
+			</form>
+			<p id="logwatch-aviso" class="logwatch-aviso" aria-live="polite"></p>
+			<div class="tabla-desplazable logwatch">
+				<table>
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Palabra</th>
+							<th>Ruta central</th>
+							<th>Rutas vigiladas</th>
+							<th>Origen</th>
+							<th>Creado por</th>
+							<th>Fecha</th>
+							<th>Acción</th>
+						</tr>
+					</thead>
+					<tbody id="logwatch-cuerpo"></tbody>
+				</table>
+			</div>
+		</section>
+	</main>
+
+	<div id="tooltip" class="tooltip" hidden></div>
+
+	<script src="js/api.js"></script>
+	<script src="js/auth.js"></script>
+	<script src="js/charts.js"></script>
+	<script src="js/alertas.js"></script>
+	<script src="js/metricas.js"></script>
+	<script src="js/procesos.js"></script>
+	<script src="js/archivos.js"></script>
+	<script src="js/antivirus.js"></script>
+	<script src="js/logwatch.js"></script>
+	<script src="js/app.js"></script>
+</body>
+</html>
