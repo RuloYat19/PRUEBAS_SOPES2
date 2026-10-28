@@ -1,0 +1,17 @@
+# Crear un nuevo usuario
+sudo useradd -m usuario_calificacion
+
+# Establecer una contraseña para el nuevo usuario
+sudo passwd usuario_calificacion
+
+# Hacer login al dashboard
+
+# Asignar usuario a rol comun
+sudo usermod -aG common_user usuario_calificacion
+
+# Hacer login al dashboard
+
+# Asignar usuario a rol comun
+sudo usermod -aG admin_user usuario_calificacion
+
+# Hacer login al dashboard
