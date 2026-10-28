@@ -4,7 +4,7 @@
  * No pegues prototipos que contradigan los que ya existen en tus prácticas.
  */
 asmlinkage long sys_get_process_info(pid_t pid, struct process_info_user __user *out);
-asmlinkage long sys_get_processes_state(struct processes_state_user __user *out);
+asmlinkage long sys_get_processes_state(struct processes_state_user __user *out, struct process_entry_user __user *entries, unsigned int max);
 asmlinkage long sys_ipc_channel_send(const char __user *user_message);
 asmlinkage long sys_ipc_channel_receive(char __user *user_message);
 asmlinkage long sys_start_log_watch(const char __user *path, const char __user *central, const char __user *keyword);

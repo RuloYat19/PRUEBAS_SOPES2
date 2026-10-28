@@ -1,16 +1,166 @@
 <!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Monitor SO2</title><link rel="stylesheet" href="/styles.css"></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monitor SO2</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
 <body>
-<header><div><p class="eyebrow">SISTEMAS OPERATIVOS 2</p><h1>Monitor integral de seguridad</h1><p class="muted">Kernel · procesos · archivos · alertas</p></div><span id="connection" class="pill">Conectando…</span></header>
+<header>
+  <div>
+    <p class="eyebrow">SISTEMAS OPERATIVOS 2</p>
+    <h1>Monitor integral de seguridad</h1>
+    <p class="muted">Kernel · procesos · archivos · alertas</p>
+  </div>
+  <div class="header-right">
+    <span id="connection" class="pill">Sin sesión</span>
+    <div id="sessionBox" hidden>Sesión: <strong id="sessionUser">—</strong> <span id="role" class="pill"></span> <button id="logout" class="secondary">Cerrar sesión</button></div>
+  </div>
+</header>
+
 <main>
-<section id="loginPanel" class="panel"><h2>Iniciar sesión</h2><p>Autenticación del sistema mediante PAM. El usuario debe pertenecer al grupo <code>admin_user</code> o <code>common_user</code>.</p><form id="loginForm"><label>Usuario<input id="username" autocomplete="username" required></label><label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label><button>Entrar</button><p id="loginMessage" class="muted"></p></form></section>
-<section id="dashboard" hidden>
-<div class="toolbar"><div>Sesión: <strong id="sessionUser">—</strong> <span id="role" class="pill"></span></div><button id="logout" class="secondary">Cerrar sesión</button></div>
-<section class="cards"><article class="metric"><span>Memoria total</span><strong id="memTotal">—</strong><small>MiB</small></article><article class="metric"><span>Memoria usada</span><strong id="memUsed">—</strong><small>MiB</small></article><article class="metric"><span>Memoria disponible</span><strong id="memAvail">—</strong><small>MiB</small></article><article class="metric"><span>Procesos</span><strong id="procTotal">—</strong><small>total registrados por syscall</small></article></section>
-<section class="grid"><article class="panel"><h2>Memoria del sistema</h2><canvas id="memoryChart" width="700" height="220" aria-label="Gráfica de memoria"></canvas><div class="legend"><span>Usada</span><span>Disponible</span><span>Swap usada</span></div></article><article class="panel"><h2>Estado de procesos</h2><div class="process-stats"><div><b id="running">—</b><span>Ejecutando</span></div><div><b id="sleeping">—</b><span>Durmiendo</span></div><div><b id="zombie">—</b><span>Zombi</span></div></div><p class="muted">El detalle y el Top 20 se habilitan cuando la syscall exponga RSS por proceso.</p></article></section>
-<section class="panel"><div class="section-head"><h2>Alertas de seguridad</h2><span class="muted">Actualización cada 2 segundos</span></div><div class="table-wrap"><table><thead><tr><th>Hora</th><th>Tipo</th><th>Severidad</th><th>Descripción</th></tr></thead><tbody id="alertsBody"><tr><td colspan="4">Sin alertas</td></tr></tbody></table></div></section>
-<section class="panel"><h2>Archivos analizados</h2><div class="table-wrap"><table><thead><tr><th>Archivo</th><th>SHA-256</th><th>Estado</th><th>Modificación Unix</th></tr></thead><tbody id="filesBody"><tr><td colspan="4">Sin archivos</td></tr></tbody></table></div></section>
-<section class="panel admin-only" id="adminPanel"><h2>Controles de administrador</h2><p class="muted">Los permisos también se validan en el daemon; ocultar botones no sustituye el control del backend.</p><div class="actions"><button data-action="metrics_on">Activar métricas</button><button data-action="metrics_off" class="secondary">Desactivar métricas</button><button data-action="files_on">Activar escaneo de archivos</button><button data-action="files_off" class="secondary">Desactivar escaneo</button><button data-action="reload_blacklist">Recargar blacklist</button></div><p id="controlMessage" class="muted"></p></section>
+<!-- ================= Login ================= -->
+<section id="loginPanel" class="panel login">
+  <h2>Iniciar sesión</h2>
+  <p>Autenticación del sistema mediante PAM. El usuario debe pertenecer al grupo <code>admin_user</code> o <code>common_user</code>.</p>
+  <form id="loginForm">
+    <label>Usuario<input id="username" autocomplete="username" required></label>
+    <label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+    <button>Entrar</button>
+    <p id="loginMessage" class="muted"></p>
+  </form>
 </section>
-</main><footer>Proyecto Único SO2 · Datos servidos por el daemon en C</footer><script src="/app.js"></script></body></html>
+
+<section id="dashboard" hidden>
+  <nav class="nav">
+    <a href="#metricas">Métricas</a><a href="#procesos">Procesos</a><a href="#archivos">Archivos</a>
+    <a href="#amenazas">Amenazas</a><a href="#logs">Logs</a><a href="#alertas">Alertas <span id="alertCount" class="pill small">0</span></a>
+  </nav>
+
+  <!-- ================= Métricas ================= -->
+  <section id="metricas" class="panel">
+    <div class="section-head">
+      <h2>Métricas del sistema</h2>
+      <label class="switch admin-only"><input type="checkbox" id="swMetrics" data-on="metrics_on" data-off="metrics_off"><span></span>Monitoreo activo</label>
+    </div>
+    <p id="metricsOff" class="notice" hidden>El monitoreo del sistema está desactivado: las métricas no se actualizan.</p>
+    <section class="cards">
+      <article class="metric"><span>Memoria usada</span><strong id="memUsed">—</strong><small id="memUsedSub">MiB</small></article>
+      <article class="metric"><span>Memoria disponible</span><strong id="memAvail">—</strong><small id="memTotal">MiB</small></article>
+      <article class="metric"><span>Swap usada</span><strong id="swapUsed">—</strong><small id="swapSub">MiB</small></article>
+      <article class="metric"><span>Procesos</span><strong id="procTotal">—</strong><small id="procSub">registrados por syscall</small></article>
+    </section>
+    <section class="charts">
+      <figure class="chart"><figcaption>Páginas activas vs. inactivas (MiB)</figcaption><canvas id="chartPages"></canvas><div class="legend" id="legendPages"></div></figure>
+      <figure class="chart"><figcaption>Memoria libre vs. caché vs. utilizada</figcaption><canvas id="chartDist"></canvas><div class="legend" id="legendDist"></div></figure>
+      <figure class="chart wide"><figcaption>Uso de memoria y swap en el tiempo (MiB)</figcaption><canvas id="chartMemory"></canvas><div class="legend" id="legendMemory"></div></figure>
+      <figure class="chart wide"><figcaption>Fallos de página por intervalo: menores (pgfault) vs. mayores (pgmajfault)</figcaption><canvas id="chartFaults"></canvas><div class="legend" id="legendFaults"></div></figure>
+    </section>
+  </section>
+
+  <!-- ================= Procesos ================= -->
+  <section id="procesos" class="panel">
+    <div class="section-head">
+      <h2>Top 20 procesos por consumo de memoria</h2>
+      <label class="switch admin-only"><input type="checkbox" id="swProcs" data-on="procs_on" data-off="procs_off"><span></span>Escaneo de procesos</label>
+    </div>
+    <div class="process-stats">
+      <div><b id="running">—</b><span>Ejecutando</span></div>
+      <div><b id="sleeping">—</b><span>Durmiendo</span></div>
+      <div><b id="zombie">—</b><span>Zombi</span></div>
+    </div>
+    <p id="procSource" class="notice" hidden></p>
+    <form id="pidForm" class="bar admin-only">
+      <label>Información de un proceso por PID <input id="pidInput" type="number" min="1" required placeholder="PID"></label>
+      <button>Consultar</button>
+    </form>
+    <div id="pidInfo" class="info admin-only" hidden></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>PID</th><th>Nombre</th><th>Estado</th><th>% memoria</th><th>RSS</th><th class="admin-only">Acción</th></tr></thead>
+      <tbody id="procBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= Archivos ================= -->
+  <section id="archivos" class="panel">
+    <div class="section-head">
+      <h2>Archivos analizados</h2>
+      <label class="switch admin-only"><input type="checkbox" id="swFiles" data-on="files_on" data-off="files_off"><span></span>Escaneo de archivos (eBPF)</label>
+    </div>
+    <p id="sensorOff" class="notice" hidden>El sensor eBPF no está disponible: revisa /tmp/proyecto_unico.log.</p>
+    <p class="muted">Ruta monitoreada: <code id="monitorPath">—</code>. Al activar el escaneo se analizan los archivos que ya están en la carpeta; no incluye subcarpetas.</p>
+    <form id="pathForm" class="bar admin-only">
+      <label>Ruta a monitorear <input id="pathInput" placeholder="/ruta/absoluta" required spellcheck="false"></label>
+      <button>Aplicar</button>
+      <button type="button" id="btnQuarantine" class="secondary">Ver cuarentena</button>
+    </form>
+    <div id="quarantineBox" class="subpanel admin-only" hidden>
+      <h3>Archivos en cuarentena</h3>
+      <div class="table-wrap"><table><thead><tr><th>Archivo</th><th>Amenaza</th><th>SHA-256</th></tr></thead><tbody id="quarantineBody"></tbody></table></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Archivo</th><th>Estado</th><th>Última modificación</th><th>SHA-256</th><th class="admin-only">Acción</th></tr></thead>
+      <tbody id="filesBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= Amenazas ================= -->
+  <section id="amenazas" class="panel">
+    <div class="section-head"><h2>Amenazas detectadas</h2><span class="muted" id="blacklistInfo"></span></div>
+    <form id="blacklistForm" class="bar admin-only">
+      <label>Actualizar base de hashes malignos (JSON) <input id="blacklistFile" type="file" accept=".json,application/json" required></label>
+      <button>Subir y reemplazar</button>
+    </form>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Amenaza (firma)</th><th>Archivo afectado</th><th>Descripción</th><th>Fecha</th></tr></thead>
+      <tbody id="threatsBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= Logwatch ================= -->
+  <section id="logs" class="panel">
+    <div class="section-head"><h2>Análisis de palabras clave (log_watch)</h2></div>
+    <form id="logwatchForm" class="grid-form admin-only">
+      <label>Log central<input id="lwCentral" placeholder="/tmp/practica4_central.log" required spellcheck="false"></label>
+      <label>Palabra clave<input id="lwKeyword" placeholder="ERROR" required maxlength="127"></label>
+      <label class="wide">Archivos a analizar (uno por línea)<textarea id="lwPaths" rows="3" placeholder="/tmp/practica4.log" required spellcheck="false"></textarea></label>
+      <div class="wide"><button>Crear logwatch</button></div>
+    </form>
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Archivo analizado</th><th>Log central</th><th>Palabra</th><th>Iniciado</th><th class="admin-only">Acción</th></tr></thead>
+      <tbody id="logwatchBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- ================= Alertas ================= -->
+  <section id="alertas" class="panel">
+    <div class="section-head">
+      <h2>Alertas de seguridad</h2>
+      <div class="filters" id="filters">
+        <button class="chip active" data-sev="">Todas</button>
+        <button class="chip HIGH" data-sev="HIGH">HIGH</button>
+        <button class="chip MEDIUM" data-sev="MEDIUM">MEDIUM</button>
+        <button class="chip LOW" data-sev="LOW">LOW</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fecha y hora</th><th>Tipo</th><th>Severidad</th><th>Motivo</th><th>Descripción</th></tr></thead>
+      <tbody id="alertsBody"></tbody>
+    </table></div>
+  </section>
+</section>
+</main>
+
+<dialog id="confirmDialog">
+  <form method="dialog">
+    <h3 id="dlgTitle"></h3>
+    <p id="dlgText"></p>
+    <div class="actions"><button value="cancel" class="secondary">Cancelar</button><button value="ok" class="danger">Confirmar</button></div>
+  </form>
+</dialog>
+<div id="toasts"></div>
+<footer>Proyecto Único SO2 · Datos servidos por el daemon en C</footer>
+<script src="/app.js"></script>
+</body>
+</html>

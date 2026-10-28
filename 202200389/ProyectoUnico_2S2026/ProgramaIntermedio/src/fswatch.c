@@ -2,6 +2,7 @@
 #include "fswatch.h"
 
 #include <errno.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <pthread.h>
@@ -208,13 +209,14 @@ static threat_rec_t record_threat_locked(const char *path, const threat_t *t, co
 /* ---------------------------------------------------------- procesar evento */
 
 /* El sensor solo manda ruta/PID; aqui se decide todo: hash, severidad y cuarentena. */
-static void process_file(const char *name, const struct sensor_event *e)
+static int process_file(const char *name, const struct sensor_event *e, bool initial_scan)
 {
 	char path[PATH_MAX], dir[PATH_MAX], sha[65];
 	struct stat st;
 	threat_t th;
 	fileinfo_t snapshot;
-	int fd, infected, existed, was_quarantined = 0, changed = 0, quarantined_now = 0;
+	int fd, infected, existed, report_threat, was_quarantined = 0;
+	int changed = 0, quarantined_now = 0;
 	char old_sha[65] = "";
 	time_t old_mtime = 0;
 	threat_rec_t rec;
@@ -224,16 +226,34 @@ static void process_file(const char *name, const struct sensor_event *e)
 	snprintf(dir, sizeof(dir), "%s", g_dir);
 	pthread_mutex_unlock(&mu);
 
-	if (snprintf(path, sizeof(path), "%s/%s", dir, name) >= (int)sizeof(path))
-		return;
+	if (snprintf(path, sizeof(path), "%s/%s", dir, name) >= (int)sizeof(path)) {
+		if (initial_scan)
+			log_msg("ruta de archivo demasiado larga: %s/%s", dir, name);
+		return -1;
+	}
 
 	/* O_NOFOLLOW: no seguir enlaces; O_NONBLOCK: no quedarse en una FIFO. */
 	fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
-	if (fd < 0)
-		return;                         /* ya no existe: se borro o renombro */
-	if (fstat(fd, &st) < 0 || !S_ISREG(st.st_mode) || sha256_fd(fd, sha) < 0) {
+	if (fd < 0) {
+		if (initial_scan)
+			log_msg("no se pudo abrir %s para analizarlo: %s", path, strerror(errno));
+		return -1;                      /* ya no existe: se borro o renombro */
+	}
+	if (fstat(fd, &st) < 0) {
+		if (initial_scan)
+			log_msg("no se pudo consultar %s: %s", path, strerror(errno));
 		close(fd);
-		return;
+		return -1;
+	}
+	if (!S_ISREG(st.st_mode)) {
+		close(fd);
+		return -1;
+	}
+	if (sha256_fd(fd, sha) < 0) {
+		if (initial_scan)
+			log_msg("no se pudo calcular SHA-256 de %s", path);
+		close(fd);
+		return -1;
 	}
 
 	infected = bl_lookup(sha, &th);
@@ -263,17 +283,20 @@ static void process_file(const char *name, const struct sensor_event *e)
 			snprintf(f->descripcion, sizeof(f->descripcion), "%s", th.descripcion);
 			snprintf(f->status, sizeof(f->status), "%s",
 				 (quarantined_now || was_quarantined) ? ST_CUARENTENA : ST_INFECTADO);
-			rec = record_threat_locked(path, &th, sha);
+			report_threat = !initial_scan || changed;
+			if (report_threat)
+				rec = record_threat_locked(path, &th, sha);
 		} else {
 			/* un archivo ya puesto en cuarentena sigue en cuarentena */
 			snprintf(f->status, sizeof(f->status), "%s",
 				 was_quarantined ? ST_CUARENTENA : ST_BENIGNO);
+			report_threat = 0;
 		}
 		snapshot = *f;
 	}
 	pthread_mutex_unlock(&mu);
 
-	if (infected) {
+	if (infected && report_threat) {
 		alert_add(SEV_HIGH, TIPO_ARCHIVOS, "Hash malicioso detectado",
 			  "Amenaza %s en %s (SHA-256 %s). Proceso %s PID %u",
 			  th.nombre, path, sha, e->comm, e->pid);
@@ -281,12 +304,67 @@ static void process_file(const char *name, const struct sensor_event *e)
 			alert_add(SEV_HIGH, TIPO_ARCHIVOS, "Archivo puesto en cuarentena",
 				  "Cuarentena automática de %s (permisos 0000)", path);
 		publish("threat", threat_json(&rec));
-	} else if (changed) {
+	} else if (!infected && changed && !initial_scan) {
 		alert_add(SEV_LOW, TIPO_ARCHIVOS, "Archivo modificado",
 			  "%s %s (proceso %s, PID %u)", path,
 			  existed ? "fue modificado" : "fue creado", e->comm, e->pid);
 	}
 	publish("file", file_json(&snapshot));
+	return 0;
+}
+
+static int scan_existing_files(char *err, size_t errn)
+{
+	char dir[PATH_MAX];
+	struct sensor_event e = { 0 };
+	struct dirent *entry;
+	DIR *dp;
+	int scanned = 0, errors = 0;
+
+	fs_get_dir(dir, sizeof(dir));
+	dp = opendir(dir);
+	if (!dp) {
+		snprintf(err, errn, "No se pudo analizar la ruta %s: %s", dir, strerror(errno));
+		return -1;
+	}
+
+	e.pid = (__u32)getpid();
+	e.uid = (__u32)geteuid();
+	snprintf(e.comm, sizeof(e.comm), "inicio_scan");
+	for (;;) {
+		struct stat st;
+
+		errno = 0;
+		entry = readdir(dp);
+		if (!entry) {
+			if (errno) {
+				log_msg("error al recorrer %s: %s", dir, strerror(errno));
+				errors++;
+			}
+			break;
+		}
+		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+			continue;
+		if (fstatat(dirfd(dp), entry->d_name, &st, AT_SYMLINK_NOFOLLOW) < 0) {
+			log_msg("no se pudo inspeccionar %s/%s: %s",
+				dir, entry->d_name, strerror(errno));
+			errors++;
+			continue;
+		}
+		if (!S_ISREG(st.st_mode))
+			continue;
+		if (process_file(entry->d_name, &e, true) == 0)
+			scanned++;
+		else
+			errors++;
+	}
+	if (closedir(dp) < 0) {
+		snprintf(err, errn, "Error al terminar el análisis de %s: %s", dir, strerror(errno));
+		return -1;
+	}
+	log_msg("escaneo inicial de %s terminado: %d archivos analizados, %d errores",
+		dir, scanned, errors);
+	return 0;
 }
 
 static int on_event(void *ctx, void *data, size_t len)
@@ -307,7 +385,7 @@ static int on_event(void *ctx, void *data, size_t len)
 	if (e->gen != gen || strchr(name, '/') || !name[0])
 		return 0;                       /* evento de una configuracion anterior */
 
-	process_file(name, e);
+	(void)process_file(name, e, false);
 	return 0;
 }
 
@@ -404,6 +482,11 @@ int fs_set_enabled(bool on, char *err, size_t errn)
 		}
 		g_attached = true;
 		log_msg("escaneo de archivos activado (eBPF enganchado)");
+		if (scan_existing_files(err, errn) < 0) {
+			sensor_bpf__detach(g_skel);
+			g_attached = false;
+			return -1;
+		}
 	} else {
 		sensor_bpf__detach(g_skel);
 		g_attached = false;

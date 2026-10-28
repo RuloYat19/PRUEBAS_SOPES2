@@ -152,7 +152,8 @@ interruptor **Escaneo de procesos** y un formulario para consultar un PID (ver �
 
 ![Archivos analizados](../img/06_dashboard_amenazas.png)
 
-La tabla lista cada archivo que el sensor vio escribir en la carpeta vigilada, con su **estado**:
+Al activar el escaneo se analiza el contenido de los archivos existentes directamente en la carpeta vigilada. Después,
+el sensor también detecta los archivos que se escriben allí. La tabla muestra los archivos analizados con su **estado**:
 
 | Estado | Significado |
 |---|---|
@@ -193,8 +194,9 @@ detectada en log» que incluye el archivo y la línea.
 1. En **Archivos analizados**, escribir la **ruta absoluta** de la carpeta (por ejemplo `/tmp/monitor`) y pulsar **Aplicar**.
 2. Activar el interruptor **Escaneo de archivos (eBPF)**.
 
-Solo se vigilan los archivos que están **directamente** en esa carpeta, no los de sus subcarpetas. Desactivar el interruptor
-detiene el sensor por completo.
+Al activar el interruptor se analizan también los archivos que ya existen directamente en la carpeta; luego se detectan
+los archivos creados o escritos allí. No se incluyen las subcarpetas. Desactivar el interruptor detiene el sensor por
+completo.
 
 ### 6.2 Ver cómo se detecta una amenaza
 
@@ -202,7 +204,7 @@ Con el escaneo activo, copiar a la carpeta vigilada los archivos de prueba (carp
 repositorio):
 
 ```bash
-cp ~/SO2/ProyectoUnico_2S2026/Drive/"Archivos de Prueba"/*.txt /tmp/monitor/
+cp ~/SO2/ProyectoUnico_2S2026/Drive/ArchivosDePrueba/*.txt /tmp/monitor/
 ```
 
 Sin recargar la página aparecen los archivos en la tabla, las amenazas con su nombre y las alertas HIGH «Hash malicioso

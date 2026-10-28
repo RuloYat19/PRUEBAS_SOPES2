@@ -303,7 +303,7 @@ void *hilo_archivos(void *sin_uso)
 		pthread_mutex_lock(&lock_sensor);
 		n_lote = 0;
 		if (consumidor)
-			ring_buffer__consume_n(consumidor, LOTE_EVENTOS);
+			ring_buffer__consume(consumidor);
 		snprintf(dir, sizeof(dir), "%s", ruta_actual);
 		gen = analisis_generacion();
 		activo = (esqueleto != NULL);
